@@ -13,17 +13,22 @@ encrypt_dir()
 	# Encrypt 
 	gpg -c --no-symkey-cache --s2k-cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65536 $dir.tar.gz
 
-	# Shred archive
-	shred $dir.tar.gz 
+	# Check that we have created the gpg file before destroying (important)
+	if [[ -f $dir.tar.gz.gpg ]]; then
 
-	# Remove archive
-	rm $dir.tar.gz 
+		# Shred archive
+		shred $dir.tar.gz 
 
-	# Shread original
-	find $dir -type f -exec shred -v {} \;
+		# Remove archive
+		rm $dir.tar.gz 
 
-	# Remove pointers
-	rm -rf $dir
+		# Shread original
+		find $dir -type f -exec shred -v {} \;
+
+		# Remove pointers
+		rm -rf $dir
+
+	fi
 }
 
 # Secure encryption routine (file)
@@ -35,11 +40,16 @@ encrypt_file()
 	# Encrypt 
 	gpg -c --no-symkey-cache --s2k-cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65536 $file
 
-	# Shred file
-	shred $file
+	# Check that we have created the gpg file before destroying (important)
+	if [[ -f $dir.tar.gz.gpg ]]; then
 
-	# Remove file 
-	rm $file
+		# Shred file
+		shred $file
+
+		# Remove file 
+		rm $file
+
+	fi
 }
 
 # Secure decryption routine (directory)
