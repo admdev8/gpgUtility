@@ -1,0 +1,175 @@
+#!/bin/bash 
+#https://github.com/mesoic
+
+# Secure encryption routine (directory)
+encrypt_dir()
+{
+	# Store root
+	local dir=$1
+
+ 	# Create archive
+	tar -czvf $dir.tar.gz $dir
+
+	# Encrypt 
+	gpg -c --no-symkey-cache --s2k-cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65536 $dir.tar.gz
+
+	# Shred archive
+	shred $dir.tar.gz 
+
+	# Remove archive
+	rm $dir.tar.gz 
+
+	# Shread original
+	find $dir -type f -exec shred -v {} \;
+
+	# Remove pointers
+	rm -rf $dir
+}
+
+# Secure encryption routine (file)
+encrypt_file()
+{
+	# Store file
+	local file=$1
+
+	# Encrypt 
+	gpg -c --no-symkey-cache --s2k-cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65536 $file
+
+	# Shred file
+	shred $file
+
+	# Remove file 
+	rm $file
+}
+
+# Secure decryption routine (directory)
+decrypt_target()
+{
+
+	# Just in case password is cached
+	gpg-connect-agent reloadagent /bye
+
+	# Store file path
+	local encrypted=$1	
+
+	# Archive (.tar.gz)
+	archive=$(echo $encrypted | sed 's/\.[^.]*$//')
+
+	# Decrypt archive
+	gpg --output $archive --decrypt $encrypted 
+
+	# Check if this is an archive and if so decompress
+	if [[ "$archive" == *tar.gz ]]; then
+
+		# Decompress archive
+		tar -xvf $archive
+
+		# Shred archive (.tar.gz)
+		shred $archive
+
+		# Delete archive 
+		rm $archive
+	fi
+}
+
+
+# For shredding decrypted directories
+shred_dir(){
+
+	# Store root
+	local dir=$1
+
+	# Shread path
+	find $dir -type f -exec shred -v {} \;
+
+	# Remove pointer
+	rm -rf $dir
+}
+
+# For shredding decrypted files
+shred_file(){
+
+	# Store path
+	local file=$1	
+
+	# shred file
+	shred -v $file
+
+	# Remove file
+	rm $file
+}
+
+# Main 
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+
+case $key in
+
+	# Encryption
+	-c|--encrypt)
+	if [ -z "$2" ]; then 
+		echo "encrypt - target not specified" 
+	else 
+		if [[ -d $2 ]]; then
+			echo "encrypting directory $2 ..."
+			encrypt_dir "$2"	 
+		elif [[ -f $2 ]]; then
+
+			echo "encrypting file $2 ..."
+			encrypt_file "$2"	 
+		else
+			echo "$2 is not vaild"
+			exit 1
+		fi
+	fi
+	exit 1;
+	;;
+
+	# Decryption
+	-d|--decrypt)
+	if [ -z "$2" ]; then 
+		echo "decrypt - target not specified" 
+	else 	
+		echo "decypting target $2 ..."
+		decrypt_target "$2"	 
+	fi
+	exit 1;
+	;;
+
+	# Shredding
+	-s|--shred)
+	if [ -z "$2" ]; 
+	then 
+		echo "shred - target diretroy not specified" 
+	else 
+		if [[ -d $2 ]]; then
+			echo "shredding directory $2 ..."
+			shred_dir "$2"	 
+		elif [[ -f $2 ]]; then
+
+			echo "shredding file $2 ..."
+			shred_file "$2"	 
+		else
+			echo "$2 is not vaild"
+			exit 1
+		fi
+	fi
+	exit 1;
+	;;
+
+    -h|--help) # unknown option
+    echo "GPG encryption utility:"
+    echo "\t Encrypt: gpg-tool.sh -c <path>"
+	echo "\t Decrypt: gpg-tool.sh -d <path>"
+    echo "\t Shread:  gpg-tool.sh -s <path>"
+    exit 1
+    ;;
+
+    *)
+    echo "Invalid option. See --help for details"
+    exit 1
+    ;;
+esac
+done
