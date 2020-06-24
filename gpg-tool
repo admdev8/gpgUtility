@@ -161,9 +161,9 @@ case $key in
 
     -h|--help) # unknown option
     echo "GPG encryption utility:"
-    echo "\t Encrypt: gpg-tool.sh -c <path>"
-	echo "\t Decrypt: gpg-tool.sh -d <path>"
-    echo "\t Shread:  gpg-tool.sh -s <path>"
+    echo "   Encrypt: gpg-tool.sh -c <path>"
+	echo "   Decrypt: gpg-tool.sh -d <path>"
+    echo "   Shread:  gpg-tool.sh -s <path>"
     exit 1
     ;;
 
@@ -173,3 +173,11 @@ case $key in
     ;;
 esac
 done
+
+
+echo "GPG encryption utility:"
+echo "   Encrypt: gpg-tool.sh -c <path>"
+echo "   Decrypt: gpg-tool.sh -d <path>"
+echo "   Shread:  gpg-tool.sh -s <path>"
+exit 1
+;;
